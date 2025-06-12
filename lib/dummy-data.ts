@@ -124,23 +124,23 @@ export function generateDummyWeightRecords(
   ];
 
   for (let i = 0; i < count; i++) {
-    const type = Math.random() > 0.5 ? "incoming" : "outgoing";
-    const item = dummyItems[Math.floor(Math.random() * dummyItems.length)];
-    const vendor =
-      dummyVendors[Math.floor(Math.random() * dummyVendors.length)];
-    const vehicle =
-      dummyVehicles[Math.floor(Math.random() * dummyVehicles.length)];
+    const type = i % 2 === 0 ? "incoming" : "outgoing"; // Deterministic type
+    const item = dummyItems[i % dummyItems.length];
+    const vendor = dummyVendors[i % dummyVendors.length];
+    const vehicle = dummyVehicles[i % dummyVehicles.length];
 
-    // Generate realistic weights
-    const tareWeight = 5000 + Math.random() * 10000; // 5-15 tons
-    const netWeight = 10000 + Math.random() * 30000; // 10-40 tons
+    // Generate deterministic weights
+    const tareWeight = 5000 + ((i * 1234) % 10000); // 5-15 tons
+    const netWeight = 10000 + ((i * 5678) % 30000); // 10-40 tons
     const grossWeight = tareWeight + netWeight;
 
-    // Generate timestamps for the last 30 days
-    const timestamp = new Date();
-    timestamp.setDate(timestamp.getDate() - Math.floor(Math.random() * 30));
-    timestamp.setHours(6 + Math.floor(Math.random() * 12)); // Working hours 6AM-6PM
-    timestamp.setMinutes(Math.floor(Math.random() * 60));
+    // Generate timestamps for the last 30 days - use fixed base date to avoid hydration issues
+    const baseDate = new Date("2024-06-12T00:00:00.000Z"); // Fixed date for consistency
+    const timestamp = new Date(baseDate);
+    const daysAgo = Math.floor((i * 30) / 150); // Distribute across 30 days
+    timestamp.setDate(timestamp.getDate() - daysAgo);
+    timestamp.setHours(6 + (i % 12)); // Working hours 6AM-6PM
+    timestamp.setMinutes((i * 7) % 60); // Deterministic minutes
 
     records.push({
       id: `WR-${String(i + 1).padStart(4, "0")}`,
@@ -154,8 +154,8 @@ export function generateDummyWeightRecords(
       tareWeight,
       netWeight,
       ticketNumber: `TKT-${String(i + 1).padStart(6, "0")}`,
-      operator: operators[Math.floor(Math.random() * operators.length)],
-      notes: Math.random() > 0.7 ? "Special handling required" : undefined,
+      operator: operators[i % operators.length], // Deterministic operator
+      notes: i % 5 === 0 ? "Special handling required" : undefined, // Deterministic notes
     });
   }
 

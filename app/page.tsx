@@ -2,6 +2,8 @@
 
 import React, { useState, useMemo } from 'react';
 import { Scale, TrendingUp, TrendingDown, Package } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { StatsCard } from '@/components/stats-card';
 import { WeightChart } from '@/components/weight-chart';
 import { DashboardFiltersComponent } from '@/components/dashboard-filters';
@@ -23,8 +25,8 @@ import {
 export default function Home() {
     const [filters, setFilters] = useState<Partial<DashboardFilters>>({
         dateRange: {
-            from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
-            to: new Date(),
+            from: new Date('2024-06-05T00:00:00.000Z'), // Fixed date 7 days before base date
+            to: new Date('2024-06-12T00:00:00.000Z'), // Fixed base date
         },
     });
 
@@ -41,21 +43,24 @@ export default function Home() {
     }, [filteredRecords]);
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-background">
             {/* Header */}
-            <header className="bg-white shadow-sm border-b border-gray-200">
+            <header className="border-b border-border bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center py-6">
                         <div className="flex items-center gap-3">
-                            <Scale className="h-8 w-8 text-blue-600" />
+                            <Scale className="h-8 w-8 text-primary" />
                             <div>
-                                <h1 className="text-2xl font-bold text-gray-900">Weighing Dashboard</h1>
-                                <p className="text-sm text-gray-600">Factory Shipping & Receiving Department</p>
+                                <h1 className="text-2xl font-bold text-foreground">Weighing Dashboard</h1>
+                                <p className="text-sm text-muted-foreground">Factory Shipping & Receiving Department</p>
                             </div>
                         </div>
-                        <div className="text-right">
-                            <p className="text-sm text-gray-600">Total Records</p>
-                            <p className="text-2xl font-bold text-gray-900">{totals.totalRecords}</p>
+                        <div className="flex items-center gap-4">
+                            <div className="text-right">
+                                <p className="text-sm text-muted-foreground">Total Records</p>
+                                <p className="text-2xl font-bold text-foreground">{totals.totalRecords}</p>
+                            </div>
+                            <ThemeToggle />
                         </div>
                     </div>
                 </div>

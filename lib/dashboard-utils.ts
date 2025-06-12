@@ -62,10 +62,11 @@ export function formatWeight(weight: number): string {
 
 export function getWeightTrendData(records: WeightRecord[]) {
   const last7Days = [];
-  const today = new Date();
+  // Use a fixed base date to ensure consistency between server and client
+  const baseDate = new Date("2024-06-12T00:00:00.000Z");
 
   for (let i = 6; i >= 0; i--) {
-    const date = new Date(today);
+    const date = new Date(baseDate);
     date.setDate(date.getDate() - i);
     const dayStart = startOfDay(date);
     const dayEnd = endOfDay(date);
