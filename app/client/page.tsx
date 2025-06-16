@@ -44,6 +44,25 @@ export default function ClientPage() {
 
     const [currentStep, setCurrentStep] = useState<1 | 2>(1);
     const [isWeighing, setIsWeighing] = useState(false);
+    const [isTouchDevice, setIsTouchDevice] = useState(false);
+
+    // Detect touch device
+    useEffect(() => {
+        const checkTouchDevice = () => {
+            setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+        };
+
+        checkTouchDevice();
+        window.addEventListener('resize', checkTouchDevice);
+        return () => window.removeEventListener('resize', checkTouchDevice);
+    }, []);
+
+    // Touch device feedback
+    const provideTouchFeedback = () => {
+        if (isTouchDevice && 'vibrate' in navigator) {
+            navigator.vibrate(50); // Short vibration for touch feedback
+        }
+    };
 
     // Helper functions to get selected names
     const getSelectedVehicle = () => dummyVehicles.find(v => v.id === weighingData.vehicleId);
@@ -67,10 +86,9 @@ export default function ClientPage() {
     const simulateWeightReading = (): number => {
         // Simulate weight between 500kg and 50000kg
         return Math.floor(Math.random() * (50000 - 500) + 500);
-    };
-
-    const captureWeight = async () => {
+    }; const captureWeight = async () => {
         setIsWeighing(true);
+        provideTouchFeedback();
 
         // Simulate delay for scale reading
         await new Promise(resolve => setTimeout(resolve, 2000));
@@ -80,6 +98,7 @@ export default function ClientPage() {
         if (currentStep === 1) {
             setWeighingData(prev => ({ ...prev, firstWeight: weight }));
             setCurrentStep(2);
+            provideTouchFeedback();
         } else {
             setWeighingData(prev => {
                 const secondWeight = weight;
@@ -98,6 +117,7 @@ export default function ClientPage() {
                     netWeight,
                 };
             });
+            provideTouchFeedback();
         }
 
         setIsWeighing(false);
@@ -244,55 +264,54 @@ export default function ClientPage() {
     }, [currentStep, weighingData.firstWeight, weighingData.secondWeight, isWeighing, canProceedToSave]);
 
     return (
-        <div className="min-h-screen bg-background">
-            {/* Header */}
-            <header className="border-b bg-card/50 backdrop-blur-sm">          <div className="container mx-auto px-4 py-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                        <Scale className="h-8 w-8 text-primary" />
-                        <div>
-                            <h1 className="text-2xl font-bold">Weighing Station</h1>
-                            <p className="text-sm text-muted-foreground">Client Interface</p>
+        <div className="min-h-screen bg-background">            {/* Header */}
+            <header className="border-b bg-card/50 backdrop-blur-sm">
+                <div className="container mx-auto px-6 py-6">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                            <Scale className="h-10 w-10 text-primary" />                            <div>
+                                <h1 className="text-3xl font-bold">Weighing Station</h1>
+                                <p className="text-base text-muted-foreground">
+                                    Client Interface {isTouchDevice && "• Touch Mode"}
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-6">
+                            <nav className="flex items-center gap-3">
+                                <a
+                                    href="/"
+                                    className="px-6 py-3 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors touch-manipulation"
+                                >
+                                    Dashboard
+                                </a>
+                                <a
+                                    href="/client"
+                                    className="px-6 py-3 text-base font-medium text-foreground bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors touch-manipulation"
+                                >
+                                    Weighing Station
+                                </a>
+                            </nav>
+                            <ThemeToggle />
                         </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <nav className="flex items-center gap-2">
-                            <a
-                                href="/"
-                                className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
-                            >
-                                Dashboard
-                            </a>
-                            <a
-                                href="/client"
-                                className="px-4 py-2 text-sm font-medium text-foreground bg-primary/10 rounded-md hover:bg-primary/20 transition-colors"
-                            >
-                                Weighing Station
-                            </a>
-                        </nav>
-                        <ThemeToggle />
-                    </div>
                 </div>
-            </div>
-            </header>
-
-            <div className="container mx-auto px-4 py-8">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            </header><div className="container mx-auto px-4 py-6">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     {/* Weighing Control Panel */}
-                    <Card className="lg:col-span-1">
-                        <CardHeader>
-                            <CardTitle className="flex items-center space-x-2">
-                                <Scale className="h-6 w-6" />
+                    <Card className="xl:col-span-1 touch-manipulation">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="flex items-center space-x-3 text-xl">
+                                <Scale className="h-7 w-7" />
                                 <span>Weighing Control</span>
                             </CardTitle>
-                            <CardDescription>
+                            <CardDescription className="text-base">
                                 Capture weights from the weighing scale
                             </CardDescription>
-                        </CardHeader>                        <CardContent className="space-y-6">
+                        </CardHeader>                        <CardContent className="space-y-8 p-6">
                             {/* Current Status */}
                             <div className="text-center">
-                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-primary/10 text-primary border border-primary/20">
-                                    <Scale className="h-4 w-4" />
+                                <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full text-base font-medium bg-primary/10 text-primary border border-primary/20">
+                                    <Scale className="h-5 w-5" />
                                     {currentStep === 1 && !weighingData.firstWeight && "Ready for First Weighing"}
                                     {currentStep === 1 && weighingData.firstWeight && "First Weight Captured"}
                                     {currentStep === 2 && !weighingData.secondWeight && "Ready for Second Weighing"}
@@ -301,59 +320,56 @@ export default function ClientPage() {
                             </div>
 
                             {/* Step Indicator */}
-                            <div className="flex items-center space-x-4">
-                                <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-all ${weighingData.firstWeight ? 'bg-green-500 text-white' :
-                                        currentStep >= 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                            <div className="flex items-center space-x-6">
+                                <div className={`flex items-center justify-center w-12 h-12 rounded-full text-base font-medium transition-all ${weighingData.firstWeight ? 'bg-green-500 text-white' :
+                                    currentStep >= 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
                                     }`}>
-                                    {weighingData.firstWeight ? <CheckCircle className="h-4 w-4" /> : '1'}
+                                    {weighingData.firstWeight ? <CheckCircle className="h-6 w-6" /> : '1'}
                                 </div>
-                                <div className={`h-px flex-1 transition-all ${weighingData.firstWeight ? 'bg-green-500' : 'bg-muted'}`} />
-                                <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-all ${weighingData.secondWeight ? 'bg-green-500 text-white' :
-                                        currentStep >= 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                                <div className={`h-1 flex-1 rounded transition-all ${weighingData.firstWeight ? 'bg-green-500' : 'bg-muted'}`} />
+                                <div className={`flex items-center justify-center w-12 h-12 rounded-full text-base font-medium transition-all ${weighingData.secondWeight ? 'bg-green-500 text-white' :
+                                    currentStep >= 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
                                     }`}>
-                                    {weighingData.secondWeight ? <CheckCircle className="h-4 w-4" /> : '2'}
+                                    {weighingData.secondWeight ? <CheckCircle className="h-6 w-6" /> : '2'}
                                 </div>
-                            </div>
-
-                            {/* Weight Display */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="text-center">
-                                    <p className="text-sm font-medium text-muted-foreground mb-2">First Weight</p>
-                                    <div className="text-3xl font-bold">
+                            </div>                            {/* Weight Display */}
+                            <div className="grid grid-cols-2 gap-6">
+                                <div className="text-center p-4 bg-muted/20 rounded-lg">
+                                    <p className="text-base font-medium text-muted-foreground mb-3">First Weight</p>
+                                    <div className="text-4xl font-bold">
                                         {weighingData.firstWeight ? `${weighingData.firstWeight.toLocaleString()} kg` : '--'}
                                     </div>
                                 </div>
-                                <div className="text-center">
-                                    <p className="text-sm font-medium text-muted-foreground mb-2">Second Weight</p>
-                                    <div className="text-3xl font-bold">
+                                <div className="text-center p-4 bg-muted/20 rounded-lg">
+                                    <p className="text-base font-medium text-muted-foreground mb-3">Second Weight</p>
+                                    <div className="text-4xl font-bold">
                                         {weighingData.secondWeight ? `${weighingData.secondWeight.toLocaleString()} kg` : '--'}
                                     </div>
                                 </div>
-                            </div>                            {/* Capture Button */}
+                            </div>
+
+                            {/* Capture Button */}
                             <div className="text-center">
                                 <Button
                                     onClick={captureWeight}
                                     disabled={isWeighing || (currentStep === 2 && weighingData.secondWeight !== null)}
-                                    size="lg"
-                                    className="w-full"
+                                    className="w-full h-16 text-lg font-semibold touch-manipulation"
                                 >
                                     {isWeighing ? (
                                         <>
-                                            <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2" />
+                                            <div className="animate-spin h-6 w-6 border-2 border-current border-t-transparent rounded-full mr-3" />
                                             Reading Scale...
                                         </>
                                     ) : (
                                         <>
-                                            <Scale className="h-4 w-4 mr-2" />
+                                            <Scale className="h-6 w-6 mr-3" />
                                             Capture {currentStep === 1 ? 'First' : 'Second'} Weight
                                         </>
                                     )}
-                                </Button>
-
-                                {/* Keyboard Shortcut Hint */}
-                                {!isWeighing && ((currentStep === 1 && !weighingData.firstWeight) || (currentStep === 2 && !weighingData.secondWeight)) && (
-                                    <p className="text-xs text-muted-foreground mt-2">
-                                        Press <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Space</kbd> to capture weight
+                                </Button>                                {/* Touch-friendly hint - hide keyboard shortcut on touch devices */}
+                                {!isWeighing && !isTouchDevice && ((currentStep === 1 && !weighingData.firstWeight) || (currentStep === 2 && !weighingData.secondWeight)) && (
+                                    <p className="text-sm text-muted-foreground mt-3">
+                                        Press <kbd className="px-2 py-1 bg-muted rounded text-sm">Space</kbd> to capture weight
                                     </p>
                                 )}
                             </div>
@@ -364,87 +380,94 @@ export default function ClientPage() {
                                     <Button
                                         onClick={resetWeighing}
                                         variant="outline"
-                                        size="sm"
+                                        className="h-12 px-6 text-base touch-manipulation"
                                     >
-                                        <RotateCcw className="h-4 w-4 mr-2" />
+                                        <RotateCcw className="h-5 w-5 mr-2" />
                                         Reset Weighing
                                     </Button>
                                 </div>
                             )}
                         </CardContent>
-                    </Card>
-
-                    {/* Calculated Results */}
-                    <Card className="lg:col-span-1">
-                        <CardHeader>
-                            <CardTitle className="flex items-center space-x-2">
-                                <Calculator className="h-6 w-6" />
+                    </Card>                    {/* Calculated Results */}
+                    <Card className="xl:col-span-1 touch-manipulation">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="flex items-center space-x-3 text-xl">
+                                <Calculator className="h-7 w-7" />
                                 <span>Calculated Results</span>
                             </CardTitle>
-                            <CardDescription>
+                            <CardDescription className="text-base">
                                 Automatically calculated weights
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-1 gap-4">
-                                <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
-                                    <span className="font-medium">Gross Weight:</span>
-                                    <span className="text-xl font-bold">
+                        <CardContent className="space-y-6 p-6">
+                            <div className="grid grid-cols-1 gap-6">
+                                <div className="flex justify-between items-center p-5 rounded-lg bg-muted/50 touch-manipulation">
+                                    <span className="font-medium text-lg">Gross Weight:</span>
+                                    <span className="text-2xl font-bold">
                                         {weighingData.grossWeight ? `${weighingData.grossWeight.toLocaleString()} kg` : '--'}
                                     </span>
                                 </div>
 
-                                <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
-                                    <span className="font-medium">Tare Weight:</span>
-                                    <span className="text-xl font-bold">
+                                <div className="flex justify-between items-center p-5 rounded-lg bg-muted/50 touch-manipulation">
+                                    <span className="font-medium text-lg">Tare Weight:</span>
+                                    <span className="text-2xl font-bold">
                                         {weighingData.tareWeight ? `${weighingData.tareWeight.toLocaleString()} kg` : '--'}
                                     </span>
                                 </div>
 
-                                <div className="flex justify-between items-center p-3 rounded-lg bg-primary/10 border border-primary/20">
-                                    <span className="font-medium text-primary">Net Weight:</span>
-                                    <span className="text-2xl font-bold text-primary">
+                                <div className="flex justify-between items-center p-6 rounded-lg bg-primary/10 border-2 border-primary/20 touch-manipulation">
+                                    <span className="font-medium text-xl text-primary">Net Weight:</span>
+                                    <span className="text-3xl font-bold text-primary">
                                         {weighingData.netWeight ? `${weighingData.netWeight.toLocaleString()} kg` : '--'}
                                     </span>
                                 </div>
                             </div>
                         </CardContent>
-                    </Card>
-
-                    {/* Transaction Details */}
-                    <Card className="lg:col-span-2">
-                        <CardHeader>
-                            <CardTitle className="flex items-center space-x-2">
-                                <Truck className="h-6 w-6" />
+                    </Card>                    {/* Transaction Details */}
+                    <Card className="xl:col-span-2 touch-manipulation">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="flex items-center space-x-3 text-xl">
+                                <Truck className="h-7 w-7" />
                                 <span>Transaction Details</span>
                             </CardTitle>
-                            <CardDescription>
+                            <CardDescription className="text-base">
                                 Enter transaction information
                             </CardDescription>
-                        </CardHeader>                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">Ticket Number *</label>
+                        </CardHeader>
+                        <CardContent className="space-y-6 p-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div className="space-y-3">
+                                    <label className="text-base font-medium">Ticket Number *</label>
                                     <Input
                                         placeholder="Enter ticket number"
                                         value={weighingData.ticketNumber}
                                         onChange={(e) => setWeighingData(prev => ({ ...prev, ticketNumber: e.target.value }))}
+                                        className="h-12 text-base touch-manipulation"
                                     />
+                                </div>                                <div className="space-y-3">
+                                    <label className="text-base font-medium">Type *</label>
+                                    <div className="flex gap-3">
+                                        <Button
+                                            type="button"
+                                            variant={weighingData.type === 'incoming' ? 'default' : 'outline'}
+                                            className="flex-1 h-12 text-base touch-manipulation"
+                                            onClick={() => setWeighingData(prev => ({ ...prev, type: 'incoming' }))}
+                                        >
+                                            Incoming
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant={weighingData.type === 'outgoing' ? 'default' : 'outline'}
+                                            className="flex-1 h-12 text-base touch-manipulation"
+                                            onClick={() => setWeighingData(prev => ({ ...prev, type: 'outgoing' }))}
+                                        >
+                                            Outgoing
+                                        </Button>
+                                    </div>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">Type *</label>
-                                    <Select value={weighingData.type} onValueChange={(value) => setWeighingData(prev => ({ ...prev, type: value as 'incoming' | 'outgoing' }))}>
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Select transaction type" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="incoming">Incoming</SelectItem>
-                                            <SelectItem value="outgoing">Outgoing</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">Vehicle *</label>
+                                <div className="space-y-3">
+                                    <label className="text-base font-medium">Vehicle *</label>
                                     <Select value={weighingData.vehicleId} onValueChange={(value) => {
                                         const selectedVehicle = dummyVehicles.find(v => v.id === value);
                                         setWeighingData(prev => ({
@@ -453,12 +476,12 @@ export default function ClientPage() {
                                             driverName: selectedVehicle?.driver || prev.driverName
                                         }));
                                     }}>
-                                        <SelectTrigger className="w-full">
+                                        <SelectTrigger className="w-full h-12 text-base touch-manipulation">
                                             <SelectValue placeholder="Select vehicle" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {dummyVehicles.map((vehicle) => (
-                                                <SelectItem key={vehicle.id} value={vehicle.id}>
+                                                <SelectItem key={vehicle.id} value={vehicle.id} className="h-12 text-base">
                                                     {vehicle.plateNumber} - {vehicle.type} ({vehicle.driver})
                                                 </SelectItem>
                                             ))}
@@ -466,15 +489,15 @@ export default function ClientPage() {
                                     </Select>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">Item *</label>
+                                <div className="space-y-3">
+                                    <label className="text-base font-medium">Item *</label>
                                     <Select value={weighingData.itemId} onValueChange={(value) => setWeighingData(prev => ({ ...prev, itemId: value }))}>
-                                        <SelectTrigger className="w-full">
+                                        <SelectTrigger className="w-full h-12 text-base touch-manipulation">
                                             <SelectValue placeholder="Select item" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {dummyItems.map((item) => (
-                                                <SelectItem key={item.id} value={item.id}>
+                                                <SelectItem key={item.id} value={item.id} className="h-12 text-base">
                                                     {item.name} ({item.category})
                                                 </SelectItem>
                                             ))}
@@ -482,15 +505,15 @@ export default function ClientPage() {
                                     </Select>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">Vendor *</label>
+                                <div className="space-y-3">
+                                    <label className="text-base font-medium">Vendor *</label>
                                     <Select value={weighingData.vendorId} onValueChange={(value) => setWeighingData(prev => ({ ...prev, vendorId: value }))}>
-                                        <SelectTrigger className="w-full">
+                                        <SelectTrigger className="w-full h-12 text-base touch-manipulation">
                                             <SelectValue placeholder="Select vendor" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {dummyVendors.map((vendor) => (
-                                                <SelectItem key={vendor.id} value={vendor.id}>
+                                                <SelectItem key={vendor.id} value={vendor.id} className="h-12 text-base">
                                                     {vendor.name} ({vendor.code}) - {vendor.type}
                                                 </SelectItem>
                                             ))}
@@ -498,18 +521,19 @@ export default function ClientPage() {
                                     </Select>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">Driver Name</label>
+                                <div className="space-y-3">
+                                    <label className="text-base font-medium">Driver Name</label>
                                     <Input
                                         placeholder="Enter driver name"
                                         value={weighingData.driverName}
                                         onChange={(e) => setWeighingData(prev => ({ ...prev, driverName: e.target.value }))}
+                                        className="h-12 text-base touch-manipulation"
                                     />
                                 </div>
-                            </div>                            <div className="space-y-2">
-                                <label className="text-sm font-medium">Notes</label>
+                            </div>                            <div className="space-y-3">
+                                <label className="text-base font-medium">Notes</label>
                                 <textarea
-                                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="flex min-h-[120px] w-full rounded-lg border border-input bg-background px-4 py-3 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 touch-manipulation resize-none"
                                     placeholder="Enter any additional notes"
                                     value={weighingData.notes}
                                     onChange={(e) => setWeighingData(prev => ({ ...prev, notes: e.target.value }))}
@@ -518,9 +542,9 @@ export default function ClientPage() {
 
                             {/* Transaction Summary */}
                             {(weighingData.vehicleId || weighingData.itemId || weighingData.vendorId || weighingData.type) && (
-                                <div className="border rounded-lg p-4 bg-accent/50">
-                                    <h4 className="text-sm font-medium mb-3">Transaction Summary</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                <div className="border rounded-lg p-6 bg-accent/50 touch-manipulation">
+                                    <h4 className="text-base font-medium mb-4">Transaction Summary</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-base">
                                         {weighingData.type && (
                                             <div>
                                                 <span className="text-muted-foreground">Type: </span>
@@ -546,35 +570,36 @@ export default function ClientPage() {
                                             </div>
                                         )}
                                     </div>
-                                </div>)}
+                                </div>
+                            )}
 
                             {/* Action Buttons */}
-                            <div className="flex flex-col gap-4 pt-4">
+                            <div className="flex flex-col gap-6 pt-6">
                                 {/* Validation Message */}
                                 {!canProceedToSave && (
-                                    <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
-                                        <AlertCircle className="h-4 w-4" />
-                                        <span className="text-sm">{getValidationMessage()}</span>
+                                    <div className="flex items-center gap-3 text-amber-600 dark:text-amber-400 p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg">
+                                        <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                                        <span className="text-base">{getValidationMessage()}</span>
                                     </div>
                                 )}
 
                                 {/* Success Message */}
                                 {canProceedToSave && (
-                                    <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-                                        <CheckCircle className="h-4 w-4" />
-                                        <span className="text-sm">Ready to save weighing record</span>
+                                    <div className="flex items-center gap-3 text-green-600 dark:text-green-400 p-4 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                                        <CheckCircle className="h-5 w-5 flex-shrink-0" />
+                                        <span className="text-base">Ready to save weighing record</span>
                                     </div>
                                 )}
 
                                 {/* Buttons */}
-                                <div className="flex justify-end gap-3">
+                                <div className="flex flex-col sm:flex-row justify-end gap-4">
                                     {canProceedToSave && (
                                         <Button
                                             onClick={printWeighingTicket}
                                             variant="outline"
-                                            size="lg"
+                                            className="h-14 px-8 text-lg font-semibold touch-manipulation"
                                         >
-                                            <Printer className="h-4 w-4 mr-2" />
+                                            <Printer className="h-5 w-5 mr-3" />
                                             Print Ticket
                                         </Button>
                                     )}
@@ -582,9 +607,9 @@ export default function ClientPage() {
                                     <Button
                                         onClick={saveRecord}
                                         disabled={!canProceedToSave}
-                                        size="lg"
+                                        className="h-14 px-8 text-lg font-semibold touch-manipulation"
                                     >
-                                        <Save className="h-4 w-4 mr-2" />
+                                        <Save className="h-5 w-5 mr-3" />
                                         Save Weighing Record
                                     </Button>
                                 </div>
