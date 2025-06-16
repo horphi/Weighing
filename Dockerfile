@@ -12,6 +12,9 @@ RUN npm ci
 # Copy all project files
 COPY ./ ./
 
+# Set permissions for node_modules/.bin
+RUN chmod -R 755 node_modules/.bin
+
 # Set production environment
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV NODE_ENV production
@@ -23,6 +26,9 @@ RUN npm run build
 FROM node:20-bullseye AS runner
 
 WORKDIR /app
+
+# Install curl for health checks
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 # Set production environment
 ENV NODE_ENV production
@@ -46,7 +52,7 @@ COPY --from=builder /app/.next/static ./.next/static
 
 # Add health check for container monitoring
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+    CMD curl --fail http://localhost:3000/ || exit 1
 
 # Set proper permissions
 RUN chown -R nextjs:nodejs /app
